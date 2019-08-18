@@ -9,11 +9,24 @@
 #endif
 
 #include "php.h"
+#include "writer.h"
+
+#include <stdio.h>
 
 ZEND_BEGIN_MODULE_GLOBALS(php_liner)
-    long        coverage_count;
+    // Configuration
+    char* output_dir;
+    char* root_dir;
+    char* exclude_dirs;
+
+    // Runtime
+    int enabled;
+    pl_stream output;
+    char *current_file;
+    int current_line;
 ZEND_END_MODULE_GLOBALS(php_liner)
 
+// Macro used to reference a module global variable
 #define LG(v) ZEND_MODULE_GLOBALS_ACCESSOR(php_liner, v)
 
 #endif

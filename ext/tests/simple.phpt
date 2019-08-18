@@ -1,13 +1,14 @@
 --TEST--
 Simple test
---SKIPIF--
-<?php if (!extension_loaded("php-liner")) print "skip"; ?>
 --FILE--
 <?php
-$dt = new \DateTime();
-$dt = new \DateTime();
-$dt = new \DateTime();
-echo php_liner();
+$coverageFile = php_liner_start();
+$x = 3;
+php_liner_stop();
+echo file_get_contents($coverageFile);
 ?>
---EXPECT--
+--EXPECTF--
++%s/ext/tests/simple.php
+2
 3
+4

@@ -27,7 +27,7 @@ build:
 
 .PHONY: clean ## cleans project
 clean:
-	git clean -fdx src
+	git clean -fdx ext
 
 .PHONY: compile ## compiles the extension
 compile:
