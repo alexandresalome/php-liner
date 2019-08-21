@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include "php-liner.h"
-#include "writer.h"
 #include "random.h"
+#include "stringutils.h"
+#include "writer.h"
 
 //
 // Globals definition
@@ -83,10 +84,24 @@ int coverage_handler(zend_execute_data *execute_data)
 
     cur_opcode = execute_data->opline;
     lineno = cur_opcode->lineno;
-    file = (char*) op_array->filename->val;
+    file = (char*) ZSTR_VAL(op_array->filename);
+
+    char *filePath;
+
+    if (strlen(LG(root_dir)) != 0 && !startsWith(LG(root_dir), file)) {
+        return ZEND_USER_OPCODE_DISPATCH;
+    }
+
+    if (strlen(LG(root_dir)) == 0) {
+        filePath = file;
+    } else {
+        int len = strlen(LG(root_dir));
+        filePath = (char*) malloc(512);
+        memcpy(filePath, &file[len], strlen(file) - len);
+    }
 
     if (file != LG(current_file)) {
-        pl_stream_write_file_name(LG(output), file);
+        pl_stream_write_file_name(LG(output), filePath);
         LG(current_file) = file;
         LG(current_line) = -1;
     }
@@ -104,15 +119,33 @@ int coverage_handler(zend_execute_data *execute_data)
 // Module configuration
 //
 
-ZEND_INI_MH(php_liner_ini_modify_handler)
+ZEND_INI_MH(php_liner_ini_modify_output_dir_handler)
 {
-    LG(output_dir) = INI_STR("php_liner.output_dir");
+    LG(output_dir)   = ZSTR_VAL(new_value);
+
+    return SUCCESS;
+}
+
+ZEND_INI_MH(php_liner_ini_modify_root_dir_handler)
+{
+    LG(root_dir) = ZSTR_VAL(new_value);
+
+    return SUCCESS;
+}
+
+ZEND_INI_MH(php_liner_ini_modify_exclude_dirs_handler)
+{
+    LG(exclude_dirs)   = ZSTR_VAL(new_value);
+
+    return SUCCESS;
 }
 
 /* {{{ INI Settings */
 PHP_INI_BEGIN()
-	STD_PHP_INI_ENTRY("php_liner.output_dir",   "/tmp/php_liner.traces", PHP_INI_ALL, php_liner_ini_modify_handler, output_dir, zend_php_liner_globals, php_liner_globals)
-PHP_INI_END()
+	PHP_INI_ENTRY("php_liner.output_dir",   "/tmp/php_liner.traces", PHP_INI_ALL, php_liner_ini_modify_output_dir_handler)
+	PHP_INI_ENTRY("php_liner.root_dir",     "",                      PHP_INI_ALL, php_liner_ini_modify_root_dir_handler)
+	PHP_INI_ENTRY("php_liner.exclude_dirs", "",                      PHP_INI_ALL, php_liner_ini_modify_exclude_dirs_handler)
+  PHP_INI_END()
 /* }}} */
 
 //
